@@ -570,13 +570,15 @@ void BRMD5(void *md16, const void *data, size_t len)
 // murmurHash3 (x86_32): https://code.google.com/p/smhasher/ - for non-cryptographic use only
 uint32_t BRMurmur3_32(const void *data, size_t len, uint32_t seed)
 {
+    const uint8_t *d = data;
     uint32_t h = seed, k = 0;
     size_t i, count = len/4;
     
     assert(data != NULL || len == 0);
     
     for (i = 0; i < count; i++) {
-        k = le32(((const uint32_t *)data)[i])*C1;
+        k = (((uint32_t)d[i + 3] << 24) | ((uint32_t)d[i + 2] << 16) |
+             ((uint32_t)d[i + 1] <<  8) | ((uint32_t)d[i]))*C1;
         k = rol32(k, 15)*C2;
         h ^= k;
         h = rol32(h, 13)*5 + 0xe6546b64;
@@ -585,9 +587,9 @@ uint32_t BRMurmur3_32(const void *data, size_t len, uint32_t seed)
     k = 0;
     
     switch (len & 3) {
-        case 3: k ^= ((const uint8_t *)data)[i*4 + 2] << 16; // fall through
-        case 2: k ^= ((const uint8_t *)data)[i*4 + 1] << 8; // fall through
-        case 1: k ^= ((const uint8_t *)data)[i*4], k *= C1, h ^= rol32(k, 15)*C2;
+        case 3: k ^= d[i + 2] << 16; // fall through
+        case 2: k ^= d[i + 1] << 8; // fall through
+        case 1: k ^= d[i], k *= C1, h ^= rol32(k, 15)*C2;
     }
     
     h ^= len;
